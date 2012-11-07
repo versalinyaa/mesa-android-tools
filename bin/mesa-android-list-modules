@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+source "$MESA_ANDROID_TOOLS_HOME/lib/mesa-android-tools/common.bash"
+
+function print_help() {
+    echo "usage:"
+    echo "    $mdroid_prog_name"
+    echo
+    echo "description:"
+    echo "    List all modules built by Mesa. This includes host modules."
+}
+
+if [[ $# -ne 0 ]]; then
+    echo "usage error"
+    echo
+    print_help
+    exit 1
+fi
+
+mdroid_set_dirs
+
+IFS=$'\n'
+for f in $(find $mdroid_mesa_srcdir -name "Android*.mk"); do
+    sed -n -e 's/^.*LOCAL_MODULE\s*:\?=\s*\(\w*\).*$/\1/p' "$f"
+done

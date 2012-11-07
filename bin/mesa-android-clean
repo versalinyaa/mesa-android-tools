@@ -1,0 +1,64 @@
+#!/bin/bash
+
+set -e
+
+source "$MESA_ANDROID_TOOLS_HOME/lib/mesa-android-tools/common.bash"
+
+function print_help() {
+    echo "usage:"
+    echo "    $mdroid_prog_name [MODULE_NAME ...]"
+    echo
+    echo "description:"
+    echo "    Clean the build artifacts of the listed Mesa modules."
+    echo "    If no module name is given, then clean all modules."
+}
+
+function usage_error() {
+    echo "usage error: $@"
+    echo
+    print_help
+    exit 1
+}
+
+function clean_module() {
+    local module="$1"
+
+    echo "cleaning $module"
+    find $ANDROID_HOST_OUT $ANDROID_PRODUCT_OUT \
+        -name $module -o \
+        -name ${module}_intermediates -o \
+        -name "$module.*" \
+    | xargs rm -rf
+}
+
+function clean_all_modules() {
+    mesa-android-list-modules | while read module; do
+        clean_module $module
+    done
+}
+
+function clean_module_list() {
+    local all_modules=":$(mesa-android-list-modules | tr '\n' ':')"
+
+    while [[ $# -gt 0 ]]; do
+        if echo "$all_modules" | grep -q -e ":$1:"; then
+            clean_module "$1"
+        else
+            mdroid_error "unrecognized module: $1"
+        fi
+
+        shift
+    done
+}
+
+mdroid_assert_has_lunch
+
+if [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
+    print_help
+    exit 0
+elif [[ $# -eq 0 ]]; then
+    clean_all_modules
+    exit 0
+else
+    clean_module_list "$@"
+fi
